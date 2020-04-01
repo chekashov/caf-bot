@@ -1,5 +1,5 @@
 #!/usr/local/bin/python3
-# Copyright 2019 Egor Chekashov
+# Copyright 2020 Egor Chekashov
 # Auto-deploy script v0.5
 
 import subprocess
@@ -47,7 +47,7 @@ html {
 }
 
 body {
-    background-color: #303952;
+    background-color: #18222D;
     color: #fff;
     padding: 2vmax;
 }

@@ -325,11 +325,12 @@ function main_menu($s = 0, $f = 0) {
 			$menu_id,
 			$e_hello;
 	setMenuState("main_menu");
+  $h = $e_hello[mt_rand(0, count($e_hello) - 1)];
 	$t = "Main Menu";
 	$d = "It all starts here 🌈";
 	$t = "→ ".strtoupper($t);
 	if (!empty($d)) {
-		$reply = "<b>$t</b>\n$d";
+		$reply = "$h\n\n<b>$t</b>\n$d";
 	} else {$reply = "<b>$t</b>";}
 	$b1 = btnArray('⌨️ KM Macros', 'macro_menu', 1);
  	$b2 = btnArray('🛠 Settings', 'settings_main', 1);
@@ -342,7 +343,6 @@ function main_menu($s = 0, $f = 0) {
 			deleteTemp();
 			setConfirm(0);
 		}
-		markTemp(sendMessage($e_hello[mt_rand(0, count($e_hello) - 1)], $chat_id));
 		$r = sendMessage($reply, $chat_id, $b1, $b2, $b3, $b4);
 		setMenuId($r);
 	} else {
@@ -588,7 +588,7 @@ function runMacro($n) { // $n — Macro Name
 					do script "'.$n.'"
 				end ignoring
 			end tell
-			\'');		
+			\'');
 	}
 
 	callbackAnswer("$n was 🚀");
@@ -777,7 +777,7 @@ $del3 = getTemp(3);
 
 // Hello
 $e_hello = ["Welcome back, commander ⚡️",
-			"Yeah, boooooi 😎", 
+			"Yeah, boooooi 😎",
 			"So, work your magic 💫",
 			"Let's automate the boring stuff 👾",
 			"Adventure, danger and low cunning ⚔️",

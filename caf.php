@@ -698,7 +698,7 @@ function nastya_menu($s = 0, $f = 0) {
 }
 
 // Load config
-$ini = parse_ini_file('../../caf.ini.php');
+$ini = parse_ini_file('../../../caf.ini.php');
 extract($ini);
 
 // API settings

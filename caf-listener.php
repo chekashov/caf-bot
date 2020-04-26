@@ -1,6 +1,23 @@
 <?php
-// Silent PHP errors, comment for debugging
-error_reporting(0);
+$host = "127.0.0.1";
+$port = 5984;
+
+// Show errors
+error_reporting(E_ALL);
+
+// Preserve timeout
+set_time_limit(0);
+
+// Create socket
+$socket = socket_create(AF_INET, SOCK_STREAM, 0) or die("Could not create socket\n");
+
+// Bind socket to port
+$result = socket_bind($socket, $host, $port) or die("Could not bind to socket\n");
+
+// Headers
+$h_ok = "HTTP/1.1 200 OK\n";
+$h_date = "Date: ".gmdate(DATE_RFC7231)."\n";
+$h_content = "Content-Type: application/json\n";
 
 // Output MySQL errors
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
@@ -59,30 +76,39 @@ function execPayload($p, $c) {
 }
 
 function jsonButtons($b1 = "", $b2 = "", $b3 = "", $b4 = "", $b5 = "", $b6 = "", $b7 = "", $b8 = "", $b9 = ""){
-	$r1 = "";
-	$r2 = "";
-	$r3 = "";
-	$r4 = "";
-	$rs = "[";
-	$re = "],";
-	$num = 1;
+  if (!empty($b1)) {
+    $r1 = "";
+  	$r2 = "";
+  	$r3 = "";
+  	$r4 = "";
+  	$rs = "[";
+  	$re = "],";
+  	$num = 1;
+    $not_empty = [];
 
-	foreach ([$b1, $b2, $b3, $b4, $b5, $b6, $b7, $b8, $b9] as $arr) {
-		$vvar = "btn".$num;
-		if (!empty($arr)) {$$vvar = ',{"text":"'.$arr['text'].'", "callback_data":"'.$arr['callback_data'].'"}';} else {$$vvar = "";}
-		if ($arr['row'] == 1) {$r1 .= ${$vvar};}
-		if ($arr['row'] == 2) {$r2 .= ${$vvar};}
-		if ($arr['row'] == 3) {$r3 .= ${$vvar};}
-		if ($arr['row'] == 4) {$r4 .= ${$vvar};}
-		$num++;
-	}
+    foreach ([$b1, $b2, $b3, $b4, $b5, $b6, $b7, $b8, $b9] as $btn) {
+      if (!empty($btn)) {
+        array_push($not_empty, $btn);
+      }
+    }
 
-	$r1 = ltrim($r1,',');
-	$r2 = ltrim($r2,',');
-	$r3 = ltrim($r3,',');
-	$r4 = ltrim($r4,',');
-	$btns = rtrim($rs.$r1.$re.$rs.$r2.$re.$rs.$r3.$re.$rs.$r4.$re,',');
-	return $btns;
+  	foreach ($not_empty as $arr) {
+  		$vvar = "btn".$num;
+  		if (!empty($arr)) {$$vvar = ',{"text":"'.$arr['text'].'", "callback_data":"'.$arr['callback_data'].'"}';} else {$$vvar = "";}
+  		if ($arr['row'] == 1) {$r1 .= ${$vvar};}
+  		if ($arr['row'] == 2) {$r2 .= ${$vvar};}
+  		if ($arr['row'] == 3) {$r3 .= ${$vvar};}
+  		if ($arr['row'] == 4) {$r4 .= ${$vvar};}
+  		$num++;
+  	}
+
+  	$r1 = ltrim($r1,',');
+  	$r2 = ltrim($r2,',');
+  	$r3 = ltrim($r3,',');
+  	$r4 = ltrim($r4,',');
+  	$btns = rtrim($rs.$r1.$re.$rs.$r2.$re.$rs.$r3.$re.$rs.$r4.$re,',');
+  	return $btns;
+  }
 }
 
 function editMessage($m, $b1 = "", $b2 = "", $b3 = "", $b4 = "", $b5 = "", $b6 = "", $b7 = "", $b8 = "", $b9 = "") {
@@ -731,133 +757,160 @@ $b1 = []; $b2 = []; $b3 = [];
 $b4 = []; $b5 = []; $b6 = [];
 $mb7 = []; $b8 = []; $b9 = [];
 
-// Get input
-$raw = file_get_contents('php://input');
-$update = json_decode($raw, true);
-
-// Sync me, baby
-if ($raw == $kmSyncKey) {
-	foreach ([	"km_cafLogging",
-				"km_cafHhAuto",
-				"km_cafHhNotif",
-				"km_cafHSchedule",
-				"km_cafHoursDebug"] as $k) {
-		kmVar($k, getConf($k), 1);
-	}
-	exit();
-}
-
-// Parse input
-if (empty($update['callback_query'])) {
-	$user_id = $update['message']['from']['id'];
-	$first_name = safeSymbols($update['message']['from']['first_name']);
-	$last_name = safeSymbols($update['message']['from']['last_name']);
-	$username = $update['message']['from']['username'];
-	$text = safeSymbols($update['message']['text']);
-	$msg_id = $update['message']['message_id'];
-	$chat_id = $update['message']['chat']['id'];
-	$msg0 = [$text, $msg_id];
-	if (!empty($chat_id)) {updHist();} else {exit();}
-} else {
-	$user_id = $update['callback_query']['from']['id'];
-	$first_name = safeSymbols($update['callback_query']['from']['first_name']);
-	$last_name = safeSymbols($update['callback_query']['from']['last_name']);
-	$username = $update['callback_query']['from']['username'];
-	$chat_id = $update['callback_query']['message']['chat']['id'];
-	$msg_id = $update['callback_query']['message']['message_id'];
-	$upd_id = $update['callback_query']['id'];
-	$callback = safeSymbols($update['callback_query']['data']);
-}
-
-// Variables from DB
-$menu_id = getMenuId();;
-$del1 = getTemp(1);
-$del2 = getTemp(2);
-$del3 = getTemp(3);
-
 // Hello
 $e_hello = ["Welcome back, commander ⚡️",
-			"Yeah, boooooi 😎",
-			"So, work your magic 💫",
-			"Let's automate the boring stuff 👾",
-			"Adventure, danger and low cunning ⚔️",
-			"What's up, S L A P P E R S? 🎸",
-			"I solemnly swear that I am up to no good 😏"];
+      "Yeah, boooooi 😎",
+      "So, work your magic 💫",
+      "Let's automate the boring stuff 👾",
+      "Adventure, danger and low cunning ⚔️",
+      "What's up, S L A P P E R S? 🎸",
+      "I solemnly swear that I am up to no good 😏"];
 $n_hello = ["Hi, Pshenchik 🦊",
-			"Look who's curly fun 💃",
-			"Yeah, boooooi 😎",
-			"So, work your magic 💫",
-			"Let's automate the boring stuff 👾",
-			"Adventure, danger and low cunning ⚔️",
-			"I solemnly swear that I am up to no good 😏"];
+      "Look who's curly fun 💃",
+      "Yeah, boooooi 😎",
+      "So, work your magic 💫",
+      "Let's automate the boring stuff 👾",
+      "Adventure, danger and low cunning ⚔️",
+      "I solemnly swear that I am up to no good 😏"];
 
-// Telegram logic
-// JSON to .log
-if ($opt_json_to_log == 1 && $user_id == $egor) {
-	sendLog("<b>JSON:</b>\n\n<code>$raw</code>");
+while(true) {
+  $raw = "";
+
+  // Start listening for connections
+  $result = socket_listen($socket, 3) or die("Could not set up socket listener\n");
+
+  // Accept incoming connections
+  // Spawn another socket to handle communication
+  $spawn = socket_accept($socket) or die("Could not accept incoming connection\n");
+
+  // Read client input
+  $input = socket_read($spawn, 8192) or die("Could not read input\n");
+  $input = trim($input);
+
+  // Echo and response
+  $output = $h_ok.$h_date.$h_content."\n"."It's alright, darling\n";
+  socket_write($spawn, $output, strlen ($output)) or die("Could not write output\n");
+  socket_close($spawn);
+
+  list($headers, $raw) = array_pad(explode("\r\n\r\n", $input, 2), 2, "");
+  // echo("\n[ HEADERS ]\n\n".$headers."\n\n");
+  // echo("[ BODY ]\n\n".$raw."\n");
+
+  // Check input
+  if (empty($raw)) {continue;};
+  $update = json_decode($raw, true);
+
+  // Sync me, baby
+  if ($input == $kmSyncKey) {
+  	foreach ([	"km_cafLogging",
+  				"km_cafHhAuto",
+  				"km_cafHhNotif",
+  				"km_cafHSchedule",
+  				"km_cafHoursDebug"] as $k) {
+  		kmVar($k, getConf($k), 1);
+  	}
+  	continue;
+  }
+
+  if (empty($update['update_id'])) {continue;};
+  // Parse input
+  if (empty($update['callback_query'])) {
+  	$user_id = $update['message']['from']['id'];
+  	$first_name = safeSymbols($update['message']['from']['first_name']);
+  	$last_name = safeSymbols($update['message']['from']['last_name']);
+  	$username = $update['message']['from']['username'];
+  	$text = safeSymbols($update['message']['text']);
+  	$msg_id = $update['message']['message_id'];
+  	$chat_id = $update['message']['chat']['id'];
+  	$msg0 = [$text, $msg_id];
+  	if (!empty($chat_id)) {updHist();} else {continue;}
+    $update['callback_query'] = false;
+  } else {
+  	$user_id = $update['callback_query']['from']['id'];
+  	$first_name = safeSymbols($update['callback_query']['from']['first_name']);
+  	$last_name = safeSymbols($update['callback_query']['from']['last_name']);
+  	$username = $update['callback_query']['from']['username'];
+  	$chat_id = $update['callback_query']['message']['chat']['id'];
+  	$msg_id = $update['callback_query']['message']['message_id'];
+  	$upd_id = $update['callback_query']['id'];
+  	$callback = safeSymbols($update['callback_query']['data']);
+  }
+
+  // Variables from DB
+  $menu_id = getMenuId();
+  $del1 = getTemp(1);
+  $del2 = getTemp(2);
+  $del3 = getTemp(3);
+
+  // Telegram logic
+  // JSON to .log
+  if ($opt_json_to_log == 1 && $user_id == $egor) {
+  	sendLog("<b>JSON:</b>\n\n<code>$raw</code>");
+  }
+
+  if ($user_id == $egor && !$update['callback_query']) {
+  	if ($text == "/auth") {
+  		continue;
+  	}
+  	if ($text == "/hey" || $text == "/start") {
+  		main_menu(0, 1);
+  	}
+  } elseif ($user_id != $egor && !$update['callback_query']) {
+  	// Forward everything
+  	if ($opt_autoforward) {forwardMessage($msg_id, $chat_id);}
+
+  	// Login
+  	if ($text == "/auth" || $text == "/start") {
+  		$reply = "Password?";
+  	} elseif ($text == "/auth ".$n_pass || $msg1[0] == "/auth" && $text == $n_pass || $msg1[0] == "/start" && $text == $n_pass) {
+  		nastya_menu(0, 1);
+  	} elseif ($text == "/auth ".$e_pass || $msg1[0] == "/auth" && $text == $e_pass || $msg1[0] == "/start" && $text == $e_pass) {
+  		main_menu(0, 1);
+  	} elseif (strpos($text, "/auth") !== false && $text != "/auth ".$n_pass || $msg1[0] == "/start" && $text != $n_pass || $msg1[0] == "/auth" && $text != $n_pass || strpos($text, "/auth") !== false && $text != "/auth ".$e_pass || $msg1[0] == "/auth" && $text != $e_pass) {
+  		$reply = "Wrong. You're not welcome here 🔪";
+  	}
+
+  	if (!empty($reply)) {sendMessage($reply, $chat_id, $b1);}
+  } elseif ($update['callback_query']) {
+  	// Forward everything
+  	if ($opt_autoforward && $user_id != $egor) {
+  		$fn = $first_name;
+  		if ($last_name != "") {$ln = " ".$last_name;} else {$ln = "";}
+  		sendMessage("<a href=\"tg://user?id=$user_id\">$fn$ln</a>:\n$callback");
+  	}
+
+  	// Callback logic
+  	if (getConfirm() == 1) {
+  		if ($callback == "kmrun__cafReboot") {
+  			exit_menu();
+  		} else {
+  			if ($callback == "menu_back") {
+  				menu_back();
+  				continue;
+  			} else {
+  				menu_back(1);
+  			}
+  		}
+  	}
+
+  	if ($menu_id == $msg_id) {
+  		if (strchr($callback, "opt_") != false) {
+  			toggleConf($callback);
+  		} elseif (strchr($callback, "kmrun_") != false) {
+  			runMacro($callback);
+  		} elseif (strchr($callback, "confirm_") != false) {
+  			setConfirm(1);
+  			confirm_dialog($callback);
+  		} else {
+  			$callback();
+  		}
+
+  	} else {
+  		deleteMessage($msg_id, $chat_id);
+  		callbackAnswer("Leave it in the past 😏");
+  	}
+  }
 }
-
-if ($user_id == $egor && !$update['callback_query']) {
-	if ($text == "/auth") {
-		exit();
-	}
-	if ($text == "/hey" || $text == "/start") {
-		main_menu(0, 1);
-	}
-} elseif ($user_id != $egor && !$update['callback_query']) {
-	// Forward everything
-	if ($opt_autoforward) {forwardMessage($msg_id, $chat_id);}
-
-	// Login
-	if ($text == "/auth" || $text == "/start") {
-		$reply = "Password?";
-	} elseif ($text == "/auth ".$n_pass || $msg1[0] == "/auth" && $text == $n_pass || $msg1[0] == "/start" && $text == $n_pass) {
-		nastya_menu(0, 1);
-	} elseif ($text == "/auth ".$e_pass || $msg1[0] == "/auth" && $text == $e_pass || $msg1[0] == "/start" && $text == $e_pass) {
-		main_menu(0, 1);
-	} elseif (strpos($text, "/auth") !== false && $text != "/auth ".$n_pass || $msg1[0] == "/start" && $text != $n_pass || $msg1[0] == "/auth" && $text != $n_pass || strpos($text, "/auth") !== false && $text != "/auth ".$e_pass || $msg1[0] == "/auth" && $text != $e_pass) {
-		$reply = "Wrong. You're not welcome here 🔪";
-	}
-
-	if (!empty($reply)) {sendMessage($reply, $chat_id, $b1);}
-} elseif ($update['callback_query']) {
-	// Forward everything
-	if ($opt_autoforward && $user_id != $egor) {
-		$fn = $first_name;
-		if ($last_name != "") {$ln = " ".$last_name;} else {$ln = "";}
-		sendMessage("<a href=\"tg://user?id=$user_id\">$fn$ln</a>:\n$callback");
-	}
-
-	// Callback logic
-	if (getConfirm() == 1) {
-		if ($callback == "kmrun__cafReboot") {
-			exit_menu();
-		} else {
-			if ($callback == "menu_back") {
-				menu_back();
-				exit();
-			} else {
-				menu_back(1);
-			}
-		}
-	}
-
-	if ($menu_id == $msg_id) {
-		if (strchr($callback, "opt_") != false) {
-			toggleConf($callback);
-		} elseif (strchr($callback, "kmrun_") != false) {
-			runMacro($callback);
-		} elseif (strchr($callback, "confirm_") != false) {
-			setConfirm(1);
-			confirm_dialog($callback);
-		} else {
-			$callback();
-		}
-
-	} else {
-		deleteMessage($msg_id, $chat_id);
-		callbackAnswer("Leave it in the past 😏");
-	}
-}
-
+// Close sockets
+socket_close($socket);
 ?>

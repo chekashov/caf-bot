@@ -1,0 +1,9 @@
+# ignore log files and databases
+*.log
+*.sql
+*.sqlite
+
+# Some server files
+.ht*
+robots.txt
+nohup.out
